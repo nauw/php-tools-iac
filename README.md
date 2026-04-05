@@ -17,9 +17,10 @@ practices.
    - [Register this repository in ArgoCD](#1-register-this-repository-in-argocd)
    - [Create the Application](#2-create-the-application)
    - [Verify the deployment](#3-verify-the-deployment)
-6. [Configure a Git webhook](#configure-a-git-webhook)
-7. [Customisation](#customisation)
-8. [Best practices applied](#best-practices-applied)
+6. [Accessing the application](#accessing-the-application)
+7. [Configure a Git webhook](#configure-a-git-webhook)
+8. [Customisation](#customisation)
+9. [Best practices applied](#best-practices-applied)
 
 ---
 
@@ -33,8 +34,8 @@ php-tools-iac/
     ├── kustomization.yaml    # Kustomize entry-point (used by ArgoCD)
     ├── namespace.yaml        # Dedicated 'php-tools' namespace
     ├── deployment.yaml       # Deployment (2 replicas, rolling update, probes)
-    ├── service.yaml          # ClusterIP Service on port 80
-    └── ingress.yaml          # Ingress (nginx) for external HTTP access
+    ├── service.yaml          # NodePort Service on port 80 (nodePort: 30080)
+    └── ingress.yaml          # (Not used - NodePort is configured instead)
 ```
 
 ---
@@ -46,7 +47,6 @@ php-tools-iac/
 | Kubernetes cluster | 1.25+ | Minikube, kind, k3s or managed cloud cluster |
 | kubectl | 1.25+ | Configured to talk to the cluster |
 | ArgoCD | 2.8+ | Installed in the `argocd` namespace |
-| Ingress-NGINX controller | any | Only required if you use `ingress.yaml` |
 
 ### Install ArgoCD (if not already installed)
 
@@ -87,13 +87,9 @@ Deploys `docker.io/nauw/php-tools:latest` with:
 - `imagePullPolicy: Always` to always fetch the latest image tag
 
 ### `manifests/service.yaml`
-Exposes the pods inside the cluster on port **80** via a `ClusterIP` Service.
-
-### `manifests/ingress.yaml`
-Configures an NGINX Ingress resource so the application is reachable from
-outside the cluster.  
-> ⚠️ **Edit the `host` field** in `ingress.yaml` to match your domain before
-> deploying.
+Exposes the pods on port **80** via a `NodePort` Service (nodePort **30080**).
+The application is accessible externally on any cluster node's IP address at
+port 30080.
 
 ### `manifests/kustomization.yaml`
 Lists all manifests so ArgoCD (which uses Kustomize natively) can render them
@@ -203,6 +199,52 @@ kubectl logs -l app.kubernetes.io/name=php-tools -n php-tools
 ```
 
 The application should be **Synced** and **Healthy** within a few seconds.
+
+---
+
+## Accessing the application
+
+The application is exposed via **NodePort** on port **30080**. You can access it
+using any node's IP address.
+
+### Get node IP address
+
+```bash
+# Get node IP addresses
+kubectl get nodes -o wide
+```
+
+### Access the application
+
+```bash
+# Using curl
+curl http://<NODE_IP>:30080
+
+# Or open in browser
+http://<NODE_IP>:30080
+```
+
+### For local clusters (Minikube, kind, k3s)
+
+**Minikube:**
+```bash
+minikube service php-tools -n php-tools
+# This automatically opens the service in your browser
+```
+
+**kind:**
+```bash
+# kind doesn't expose NodePorts by default. Use port-forward instead:
+kubectl port-forward -n php-tools svc/php-tools 8080:80
+# Access at http://localhost:8080
+```
+
+**k3s / bare-metal:**
+```bash
+# Get the IP of your node
+NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+echo "Access the application at: http://$NODE_IP:30080"
+```
 
 ---
 
