@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: php-tools
+  namespace: argocd             # ArgoCD is assumed to be installed in the 'argocd' namespace
+  labels:
+    app.kubernetes.io/name: php-tools
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io  # Enables cascade deletion of resources
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/nauw/php-tools-iac   # URL of this repository
+    targetRevision: HEAD
+    path: manifests                                   # Path inside the repo where manifests live
+
+  destination:
+    server: https://kubernetes.default.svc  # In-cluster deployment
+    namespace: php-tools
+
+  syncPolicy:
+    automated:
+      prune: true       # Remove resources that are no longer in Git
+      selfHeal: true    # Re-sync if cluster state drifts from Git
+    syncOptions:
+      - CreateNamespace=true     # Let ArgoCD create the namespace if it doesn't exist
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
