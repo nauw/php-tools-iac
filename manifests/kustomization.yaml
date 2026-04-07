@@ -5,4 +5,4 @@ resources:
   - namespace.yaml
   - deployment.yaml
   - service.yaml
-  # - ingress.yaml  # Not using Ingress; using NodePort instead
+  - ingress.yaml  # using ingress now
