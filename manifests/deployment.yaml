@@ -8,16 +8,16 @@ metadata:
     app.kubernetes.io/instance: php-tools
     app.kubernetes.io/managed-by: argocd
 spec:
-  replicas: 4
-  revisionHistoryLimit: 2
+  replicas: 4 # Number of desired Pods serving traffic
+  revisionHistoryLimit: 2 # Keep the last 2 revisions for rollback
   selector:
     matchLabels:
-      app.kubernetes.io/name: php-tools
+      app.kubernetes.io/name: php-tools # Must match template labels to bind Pods to this Deployment
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
+      maxSurge: 25% # Allow up to 25% more pods than the desired number during the update
+      maxUnavailable: 25% # Allow up to 25% of the pods to be unavailable during the update
   template:
     metadata:
       labels:
@@ -25,42 +25,42 @@ spec:
         app.kubernetes.io/instance: php-tools
     spec:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 1000
+        runAsNonRoot: true # Prevent container from running as root
+        runAsUser: 1000 # Default UID for processes in the container
+        fsGroup: 1000 # Group ownership applied to mounted volumes
       containers:
         - name: php-tools
-          image: docker.io/nauw/php-tools:latest
-          imagePullPolicy: Always
+          image: docker.io/nauw/php-tools:latest # Container image/tag to deploy
+          imagePullPolicy: Always # Always pull image (useful with mutable tags like latest)
           ports:
             - name: http
               containerPort: 80
               protocol: TCP
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: "100m" # Guaranteed minimum CPU
+              memory: "128Mi" # Guaranteed minimum memory
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: "500m" # Hard CPU cap per Pod
+              memory: "256Mi" # Hard memory cap per Pod
           livenessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 30
-            periodSeconds: 30
-            failureThreshold: 3
+            initialDelaySeconds: 30 # Wait before first health check after container starts
+            periodSeconds: 30 # Probe interval
+            failureThreshold: 3 # Restart container after 3 consecutive failures
           readinessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 15
-            periodSeconds: 30
-            failureThreshold: 3
+            initialDelaySeconds: 15 # Delay before Pod can receive traffic
+            periodSeconds: 30 # Probe interval
+            failureThreshold: 3 # Mark Pod unready after 3 consecutive failures
           securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false # Block processes from gaining extra privileges
+            readOnlyRootFilesystem: false # Keep writable root FS (set true if app supports it)
             capabilities:
               drop:
-                - ALL
+                - ALL # Drop all Linux capabilities for least privilege
       restartPolicy: Always
