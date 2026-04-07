@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: argocd
 spec:
   replicas: 4
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: php-tools
