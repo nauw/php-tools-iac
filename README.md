@@ -216,6 +216,48 @@ Ingress controller, then open:
 http://php-tools.local/
 ```
 
+### Minikube (Docker driver) note
+
+When Minikube runs with the Docker driver, the Ingress IP is often on an
+internal Docker network and may not be directly reachable from the host.
+
+In this case, run:
+
+```bash
+minikube tunnel
+```
+
+Keep that command running in a dedicated terminal, and map the host to
+loopback in your hosts file:
+
+```text
+127.0.0.1 php-tools.local
+```
+
+Then access the app at `http://php-tools.local/`.
+
+### Minikube (Podman driver) note
+
+With the Podman driver, `minikube tunnel` may be unreliable depending on host
+networking mode. If the Ingress IP is not reachable from your machine, test
+through the Ingress controller instead of port-forwarding the app service.
+
+Port-forward the NGINX Ingress controller service:
+
+```bash
+kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 8081:80
+```
+
+Then call the local port with the Ingress host header:
+
+```bash
+curl -H "Host: php-tools.local" http://127.0.0.1:8081/
+```
+
+This validates routing through Ingress rules. Port-forwarding
+`svc/php-tools` bypasses Ingress and should only be used for direct app
+reachability checks.
+
 ### Temporary local access
 
 You can also port-forward the service directly:
