@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/instance: php-tools
     app.kubernetes.io/managed-by: argocd
 spec:
-  replicas: 0 # Number of desired Pods serving traffic
+  replicas: 4 # Number of desired Pods serving traffic
   revisionHistoryLimit: 2 # Keep the last 2 revisions for rollback
   selector:
     matchLabels:
