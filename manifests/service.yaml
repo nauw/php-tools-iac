@@ -13,6 +13,6 @@ spec:
     app.kubernetes.io/name: php-tools
   ports:
     - name: http
-      port: 80s
+      port: 80
       protocol: TCP
-      targetPort: 8080
+      targetPort: 80

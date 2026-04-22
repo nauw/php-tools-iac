@@ -83,13 +83,13 @@ Deploys `docker.io/nauw/php-tools:latest` with:
 - **2 replicas** and a zero-downtime **RollingUpdate** strategy
 - CPU/memory **resource requests and limits**
 - HTTP **liveness** and **readiness** probes
-- Non-root security context (`runAsNonRoot: true`)
+- Apache exposed on container port **80**
 - `imagePullPolicy: Always` to always fetch the latest image tag
 
 ### `manifests/service.yaml`
-Exposes the pods on port **80** via a `NodePort` Service (nodePort **30080**).
-The application is accessible externally on any cluster node's IP address at
-port 30080.
+Exposes the pods internally on port **80** via a `ClusterIP` Service. The
+application can then be published through the included Ingress resource or
+temporarily accessed with `kubectl port-forward`.
 
 ### `manifests/kustomization.yaml`
 Lists all manifests so ArgoCD (which uses Kustomize natively) can render them
@@ -204,46 +204,25 @@ The application should be **Synced** and **Healthy** within a few seconds.
 
 ## Accessing the application
 
-The application is exposed via **NodePort** on port **30080**. You can access it
-using any node's IP address.
+The repository now exposes the workload through the included **Ingress** and a
+backing `ClusterIP` Service.
 
-### Get node IP address
+### Using the Ingress
 
-```bash
-# Get node IP addresses
-kubectl get nodes -o wide
+Add an entry for `php-tools.local` in your local hosts file that points to your
+Ingress controller, then open:
+
+```text
+http://php-tools.local/
 ```
 
-### Access the application
+### Temporary local access
+
+You can also port-forward the service directly:
 
 ```bash
-# Using curl
-curl http://<NODE_IP>:30080
-
-# Or open in browser
-http://<NODE_IP>:30080
-```
-
-### For local clusters (Minikube, kind, k3s)
-
-**Minikube:**
-```bash
-minikube service php-tools -n php-tools
-# This automatically opens the service in your browser
-```
-
-**kind:**
-```bash
-# kind doesn't expose NodePorts by default. Use port-forward instead:
 kubectl port-forward -n php-tools svc/php-tools 8080:80
 # Access at http://localhost:8080
-```
-
-**k3s / bare-metal:**
-```bash
-# Get the IP of your node
-NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-echo "Access the application at: http://$NODE_IP:30080"
 ```
 
 ---

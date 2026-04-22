@@ -24,17 +24,13 @@ spec:
         app.kubernetes.io/name: php-tools
         app.kubernetes.io/instance: php-tools
     spec:
-      securityContext:
-        runAsNonRoot: true # Prevent container from running as root
-        runAsUser: 1000 # Default UID for processes in the container
-        fsGroup: 1000 # Group ownership applied to mounted volumes
       containers:
         - name: php-tools
           image: docker.io/nauw/php-tools:latest # Container image/tag to deploy
           imagePullPolicy: Always # Always pull image (useful with mutable tags like latest)
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 80
               protocol: TCP
           resources:
             requests:
@@ -60,7 +56,4 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false # Block processes from gaining extra privileges
             readOnlyRootFilesystem: false # Keep writable root FS (set true if app supports it)
-            capabilities:
-              drop:
-                - ALL # Drop all Linux capabilities for least privilege
       restartPolicy: Always
